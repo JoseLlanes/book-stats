@@ -1,0 +1,8 @@
+silabeador
+pandas
+fuzz
+openpyxl
+numpy
+rapidfuzz
+pymupdf
+matplotlib
