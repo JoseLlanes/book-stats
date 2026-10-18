@@ -1,8 +1,4 @@
-silabeador
-pandas
-fuzz
-openpyxl
-numpy
-rapidfuzz
+streamlit
 pymupdf
+numpy
 matplotlib

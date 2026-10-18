@@ -1,76 +1,53 @@
+"""Metric calculations for PDF book analysis."""
+
 import re
-import numpy as np
+from typing import Iterable
+
 import fitz
-
-import visualization as vis
-
-
-PDF_PATH = "data/La Carontina.pdf"
-
-# Open PDF
-doc = fitz.open(PDF_PATH)
-
-# Number of pages
-num_pages = len(doc)
-
-# Extract all text
-text = "\n".join(page.get_text() for page in doc)
-
-# Extract words
-words = re.findall(r"\b[\wáéíóúüñÁÉÍÓÚÜÑ]+\b", text)
-num_words = len(words)
-
-# Word lengths
-word_lengths = [len(word) for word in words]
-
-# Unique words
-unique_words = set(word.lower() for word in words)
-num_unique_words = len(unique_words)
-
-# Words per page
-words_per_page = [
-    re.findall(r"\b[\wáéíóúüñÁÉÍÓÚÜÑ]+\b", page.get_text()) for page in doc
-]
-
-# Discard the first page because it contains the title
-words_per_page = words_per_page[1:]
-
-# Count the number of words on each page
-num_words_per_page = [len(page_words) for page_words in words_per_page]
+import numpy as np
 
 
-# Print document metrics
-print(f"Pages: {num_pages}")
-print(f"Words: {num_words}")
-print(f"Unique words: {num_unique_words}")
-
-if num_words > 0:
-    lexical_richness = num_unique_words / num_words
-    print(f"Type-Token Ratio (TTR): {lexical_richness * 100:.2f} %")
-
-    print(
-        f"Mean word length: {np.mean(word_lengths):.2f} +/- {np.std(word_lengths):.2f}"
-    )
-
-    max_word_index = np.argmax(word_lengths)
-    print(
-        f"Maximum word length: {word_lengths[max_word_index]} ({words[max_word_index]})"
-    )
-
-    print(f"Minimum word length: {np.min(word_lengths)}")
-
-if num_words_per_page:
-    mean_words_per_page = np.mean(num_words_per_page)
-    std_words_per_page = np.std(num_words_per_page)
-
-    print(
-        f"Mean words per page: {mean_words_per_page:.2f} +/- {std_words_per_page:.2f}"
-    )
+WORD_PATTERN = re.compile(r"\b[^\W\d_]+(?:['’\-][^\W\d_]+)*\b", re.UNICODE)
 
 
-# Generate visualizations
-vis.plot_mean_len_per_page(doc)
-vis.plot_pages_per_chapter(doc)
+def extract_page_texts(pdf_bytes: bytes) -> list[str]:
+    """Extract page text from an in-memory PDF and always close the document."""
+    with fitz.open(stream=pdf_bytes, filetype="pdf") as document:
+        return [page.get_text() for page in document]
 
-# Close PDF
-doc.close()
+
+def tokenize(text: str) -> list[str]:
+    return WORD_PATTERN.findall(text or "")
+
+
+def calculate_metrics(page_texts: Iterable[str]) -> dict:
+    """Calculate book-wide and per-page metrics from extracted page text."""
+    pages = list(page_texts)
+    words_by_page = [tokenize(text) for text in pages]
+    words = [word for page_words in words_by_page for word in page_words]
+    lengths = [len(word) for word in words]
+    unique_words = {word.casefold() for word in words}
+
+    return {
+        "num_pages": len(pages),
+        "num_words": len(words),
+        "num_unique_words": len(unique_words),
+        "ttr": len(unique_words) / len(words) if words else 0.0,
+        "mean_word_length": float(np.mean(lengths)) if lengths else 0.0,
+        "std_word_length": float(np.std(lengths)) if lengths else 0.0,
+        "longest_word": max(words, key=len) if words else "—",
+        "longest_word_length": max(lengths, default=0),
+        "shortest_word": min(words, key=len) if words else "—",
+        "shortest_word_length": min(lengths, default=0),
+        "mean_words_per_page": float(np.mean([len(words) for words in words_by_page])) if pages else 0.0,
+        "std_words_per_page": float(np.std([len(words) for words in words_by_page])) if pages else 0.0,
+        "mean_word_length_per_page": [
+            float(np.mean([len(word) for word in page_words])) if page_words else 0.0
+            for page_words in words_by_page
+        ],
+    }
+
+
+def analyze_pdf(pdf_bytes: bytes) -> tuple[dict, list[str]]:
+    pages = extract_page_texts(pdf_bytes)
+    return calculate_metrics(pages), pages
