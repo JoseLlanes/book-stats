@@ -2,6 +2,10 @@
 
 Book Stats analyzes the vocabulary and structure of text based PDFs. Upload a PDF to view page and word counts, lexical diversity, word-length statistics, per-page word-length trends, and estimated chapter lengths. The uploaded file is processed in memory and is not stored by the application.
 
+## Live app
+
+The app is available at [my-book-stats.streamlit.app](https://my-book-stats.streamlit.app/).
+
 ## Run locally
 
 Use Python 3.10 or later. From the project directory, create and activate a virtual environment, then install the dependencies and start Streamlit:

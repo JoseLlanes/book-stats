@@ -42,8 +42,8 @@ def plot_pages_per_chapter(page_texts):
     chapters = list(chapter_pages)
     ax.bar(chapters, list(chapter_pages.values()), color="#4c78a8")
     ax.set_xlabel("Chapter")
-    ax.set_ylabel("Estimated pages")
-    ax.set_title("Estimated Pages per Chapter")
+    ax.set_ylabel("Pages")
+    ax.set_title("Pages per Chapter")
     ax.grid(axis="y", alpha=0.3)
     fig.tight_layout()
     return fig, chapter_pages

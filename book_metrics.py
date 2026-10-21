@@ -50,8 +50,6 @@ def calculate_metrics(page_texts: Iterable[str]) -> dict:
         "std_word_length": float(np.std(lengths)) if lengths else 0.0,
         "longest_word": max(words, key=len) if words else "—",
         "longest_word_length": max(lengths, default=0),
-        "shortest_word": min(words, key=len) if words else "—",
-        "shortest_word_length": min(lengths, default=0),
         "mean_words_per_page": mean_words_per_page,
         "std_words_per_page": std_words_per_page,
         "mean_word_length_per_page": mean_word_length_per_page,

@@ -87,23 +87,16 @@ if metrics and page_texts is not None:
     cols[2].metric(
         "Longest word", f"{metrics['longest_word']} ({metrics['longest_word_length']})"
     )
-    cols[3].metric(
-        "Shortest word",
-        f"{metrics['shortest_word']} ({metrics['shortest_word_length']})",
-    )
+
     cols = st.columns(2)
-    cols[0].metric("Mean words per page", f"{metrics['mean_words_per_page']:.1f}")
-    cols[1].metric(
-        "Words per page standard deviation", f"{metrics['std_words_per_page']:.1f}"
+    cols[0].metric(
+        "Mean words per page",
+        f"{metrics['mean_words_per_page']:.1f} +/- {metrics['std_words_per_page']:.1f}",
     )
 
     st.header("Visualizations")
     left, right = st.columns(2)
     with left:
-        fig = vis.plot_mean_len_per_page(metrics["mean_word_length_per_page"])
-        st.pyplot(fig, use_container_width=True)
-        plt.close(fig)
-    with right:
         fig, chapters = vis.plot_pages_per_chapter(page_texts)
         if fig is None:
             st.info(
@@ -112,6 +105,10 @@ if metrics and page_texts is not None:
         else:
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
+    with right:
+        fig = vis.plot_mean_len_per_page(metrics["mean_word_length_per_page"])
+        st.pyplot(fig, use_container_width=True)
+        plt.close(fig)
 
     st.download_button(
         "Download metrics as CSV",
