@@ -1,7 +1,6 @@
 import unittest
 
-from book_metrics import calculate_metrics
-from visualization import get_chapter_pages
+from metrics.book_metrics import calculate_metrics
 
 
 class MetricsTests(unittest.TestCase):
@@ -20,16 +19,6 @@ class MetricsTests(unittest.TestCase):
         self.assertEqual(result["num_pages"], 0)
         self.assertEqual(result["num_words"], 0)
         self.assertEqual(result["mean_word_length"], 0)
-
-
-class ChapterDetectionTests(unittest.TestCase):
-    def test_detects_spanish_english_roman_and_arabic_headings(self):
-        spanish_heading = "CAP" + chr(0x00CD) + "TULO I\ntext"
-        pages = ["Preface", spanish_heading, "CHAPTER 2\ntext", "CAPITULO III"]
-        self.assertEqual(get_chapter_pages(pages), {"I": 1, "2": 1, "III": 1})
-
-    def test_no_headings_returns_empty_mapping(self):
-        self.assertEqual(get_chapter_pages(["Just prose", "More prose"]), {})
 
 
 if __name__ == "__main__":

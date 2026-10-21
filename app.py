@@ -7,8 +7,9 @@ import fitz
 import matplotlib.pyplot as plt
 import streamlit as st
 
-import visualization as vis
-from book_metrics import analyze_pdf, calculate_repetitions
+import visualization.plots as vis
+import metrics.book_metrics as mbm
+from metrics.main_classes import METRICS
 
 
 st.set_page_config(
@@ -31,8 +32,6 @@ def metrics_csv(metrics):
         ("Word length standard deviation", "std_word_length"),
         ("Longest word", "longest_word"),
         ("Longest word length", "longest_word_length"),
-        ("Shortest word", "shortest_word"),
-        ("Shortest word length", "shortest_word_length"),
         ("Mean words per page", "mean_words_per_page"),
         ("Words per page standard deviation", "std_words_per_page"),
     ]
@@ -46,9 +45,10 @@ if st.button("Analyze Book", type="primary", disabled=uploaded_file is None):
     st.session_state.pop("book_stats_metrics", None)
     st.session_state.pop("book_stats_pages", None)
     st.session_state.pop("book_stats_repetitions", None)
+    st.session_state.pop("book_stats_explorer", None)
     try:
         with st.spinner("Analyzing your book..."):
-            metrics, page_texts = analyze_pdf(uploaded_file.getvalue())
+            metrics, page_texts = mbm.analyze_pdf(uploaded_file.getvalue())
         if metrics["num_pages"] == 0:
             st.error("This PDF contains no pages to analyze.")
         elif metrics["num_words"] == 0:
@@ -94,21 +94,56 @@ if metrics and page_texts is not None:
         f"{metrics['mean_words_per_page']:.1f} +/- {metrics['std_words_per_page']:.1f}",
     )
 
-    st.header("Visualizations")
-    left, right = st.columns(2)
-    with left:
-        fig, chapters = vis.plot_pages_per_chapter(page_texts)
+    st.header("Literary Metrics Visualizer")
+    control_cols = st.columns(3)
+    with control_cols[0]:
+        explorer_axis = st.selectbox(
+            "X-axis", ["Pages", "Chapters"], key="explorer_axis"
+        )
+    metric_by_label = {
+        item.label: item for item in METRICS if explorer_axis in item.axes
+    }
+    metric_options = list(metric_by_label)
+    metric_key = "explorer_metric"
+    if st.session_state.get(metric_key) not in metric_by_label:
+        st.session_state[metric_key] = metric_options[0]
+    with control_cols[1]:
+        selected_metric = st.selectbox(
+            "Metric", metric_options, key=metric_key
+        )
+    with control_cols[2]:
+        chart_type = st.selectbox(
+            "Chart type", ["Line", "Bar", "Scatter"], key="explorer_chart_type"
+        )
+    if st.button("Plot", key="explorer_plot"):
+        selected = metric_by_label[selected_metric]
+        prepared = mbm.prepare_metric_data(page_texts, selected.key, explorer_axis)
+        x_column = "Pages" if explorer_axis == "Pages" else "Chapter"
+        chart_data = prepared.rename(columns={"value": "value"})
+        st.session_state["book_stats_explorer"] = (
+            chart_data,
+            x_column,
+            selected.label,
+            chart_type,
+        )
+
+    explorer = st.session_state.get("book_stats_explorer")
+    if explorer:
+        chart_data, x_column, metric_label, plotted_type = explorer
+        fig = vis.plot_metric(chart_data, x_column, metric_label, plotted_type)
         if fig is None:
-            st.info(
-                "No chapter headings were detected. Try headings such as CAPITULO I or CHAPTER 1."
-            )
+            st.info("No valid values are available for this selection.")
         else:
-            st.pyplot(fig, use_container_width=True)
+            st.pyplot(fig, width="content")
+            buffer = io.BytesIO()
+            fig.savefig(buffer, format="png", dpi=300, bbox_inches="tight")
             plt.close(fig)
-    with right:
-        fig = vis.plot_mean_len_per_page(metrics["mean_word_length_per_page"])
-        st.pyplot(fig, use_container_width=True)
-        plt.close(fig)
+            st.download_button(
+                "Download chart as PNG",
+                buffer.getvalue(),
+                "literary_metrics.png",
+                "image/png",
+            )
 
     st.download_button(
         "Download metrics as CSV",
@@ -119,7 +154,7 @@ if metrics and page_texts is not None:
 
     if st.button("Calculate repeated words"):
         with st.spinner("Finding long words repeated in consecutive sentences..."):
-            st.session_state["book_stats_repetitions"] = calculate_repetitions(
+            st.session_state["book_stats_repetitions"] = mbm.calculate_repetitions(
                 page_texts
             )
 
@@ -132,7 +167,7 @@ if metrics and page_texts is not None:
             st.dataframe(
                 repetitions,
                 hide_index=True,
-                use_container_width=True,
+                width="stretch",
                 column_config={
                     "Page": st.column_config.NumberColumn("Page", format="%d"),
                     "Sentence pair": st.column_config.TextColumn("Sentence Pair"),
