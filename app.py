@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 import visualization as vis
-from book_metrics import analyze_pdf
+from book_metrics import analyze_pdf, calculate_repetitions
 
 
 st.set_page_config(
@@ -45,6 +45,7 @@ def metrics_csv(metrics):
 if st.button("Analyze Book", type="primary", disabled=uploaded_file is None):
     st.session_state.pop("book_stats_metrics", None)
     st.session_state.pop("book_stats_pages", None)
+    st.session_state.pop("book_stats_repetitions", None)
     try:
         with st.spinner("Analyzing your book..."):
             metrics, page_texts = analyze_pdf(uploaded_file.getvalue())
@@ -118,3 +119,26 @@ if metrics and page_texts is not None:
         file_name="book_stats_metrics.csv",
         mime="text/csv",
     )
+
+    if st.button("Calculate repeated words"):
+        with st.spinner("Finding long words repeated in consecutive sentences..."):
+            st.session_state["book_stats_repetitions"] = calculate_repetitions(
+                page_texts
+            )
+
+    repetitions = st.session_state.get("book_stats_repetitions")
+    if repetitions is not None:
+        st.subheader("Long words repeated in consecutive sentences")
+        if repetitions.empty:
+            st.info("No long repeated words were found.")
+        else:
+            st.dataframe(
+                repetitions,
+                hide_index=True,
+                use_container_width=True,
+                column_config={
+                    "Page": st.column_config.NumberColumn("Page", format="%d"),
+                    "Sentence pair": st.column_config.TextColumn("Sentence Pair"),
+                    "Repeated word": st.column_config.TextColumn("Repeated Word"),
+                },
+            )
