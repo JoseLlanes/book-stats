@@ -1,7 +1,7 @@
 import unittest
 
 from metrics.book_metrics import calculate_metrics
-from models.analysis.word_frequency import most_frequent_words
+from models.repetitions.word_frequency import most_frequent_words
 
 
 class MetricsTests(unittest.TestCase):

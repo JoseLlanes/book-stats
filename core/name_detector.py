@@ -12,7 +12,8 @@ def detect_names(texts: list[str]) -> set[str]:
     """
     names = set()
     for text in texts:
-        for line in (text or "").splitlines() or [text or ""]:
+        main_line = (text or "").splitlines() or [text or ""]
+        for line in main_line:
             for match in WORD_PATTERN.finditer(line):
                 word = match.group()
                 if not word[:1].isupper():
