@@ -9,6 +9,7 @@ import streamlit as st
 
 import visualization.plots as vis
 import metrics.book_metrics as mbm
+from models.analysis.word_frequency import most_frequent_words
 from metrics.main_classes import METRICS
 
 
@@ -41,11 +42,29 @@ def metrics_csv(metrics):
     return output.getvalue().encode("utf-8-sig")
 
 
+def analysis_button(label, result_key, widget_key):
+    """Show an analysis button and a close button while its result is visible."""
+    has_result = st.session_state.get(result_key) is not None
+    if has_result:
+        action_col, close_col = st.columns([1, 0.16], vertical_alignment="center")
+        action_clicked = action_col.button(label, key=f"{widget_key}_action")
+        close_clicked = close_col.button(
+            "\u00d7", key=f"{widget_key}_close", help="Close results"
+        )
+        if close_clicked:
+            st.session_state.pop(result_key, None)
+            return False
+        return action_clicked
+
+    return st.button(label, key=f"{widget_key}_action")
+
+
 if st.button("Analyze Book", type="primary", disabled=uploaded_file is None):
     st.session_state.pop("book_stats_metrics", None)
     st.session_state.pop("book_stats_pages", None)
     st.session_state.pop("book_stats_repetitions", None)
     st.session_state.pop("book_stats_explorer", None)
+    st.session_state.pop("book_stats_word_frequency", None)
     try:
         with st.spinner("Analyzing your book..."):
             metrics, page_texts = mbm.analyze_pdf(uploaded_file.getvalue())
@@ -70,6 +89,7 @@ if st.button("Analyze Book", type="primary", disabled=uploaded_file is None):
 
 metrics = st.session_state.get("book_stats_metrics")
 page_texts = st.session_state.get("book_stats_pages")
+word_frequency = st.session_state.get("book_stats_word_frequency")
 if metrics and page_texts is not None:
     st.header("Overview")
     cols = st.columns(4)
@@ -108,14 +128,12 @@ if metrics and page_texts is not None:
     if st.session_state.get(metric_key) not in metric_by_label:
         st.session_state[metric_key] = metric_options[0]
     with control_cols[1]:
-        selected_metric = st.selectbox(
-            "Metric", metric_options, key=metric_key
-        )
+        selected_metric = st.selectbox("Metric", metric_options, key=metric_key)
     with control_cols[2]:
         chart_type = st.selectbox(
             "Chart type", ["Line", "Bar", "Scatter"], key="explorer_chart_type"
         )
-    if st.button("Plot", key="explorer_plot"):
+    if analysis_button("Plot", "book_stats_explorer", "explorer_plot"):
         selected = metric_by_label[selected_metric]
         prepared = mbm.prepare_metric_data(page_texts, selected.key, explorer_axis)
         x_column = "Pages" if explorer_axis == "Pages" else "Chapter"
@@ -126,6 +144,7 @@ if metrics and page_texts is not None:
             selected.label,
             chart_type,
         )
+        st.rerun()
 
     explorer = st.session_state.get("book_stats_explorer")
     if explorer:
@@ -152,11 +171,30 @@ if metrics and page_texts is not None:
         mime="text/csv",
     )
 
-    if st.button("Calculate repeated words"):
+    if analysis_button(
+        "Calculate most frequent words",
+        "book_stats_word_frequency",
+        "word_frequency",
+    ):
+        st.session_state["book_stats_word_frequency"] = most_frequent_words(page_texts)
+        st.rerun()
+
+    word_frequency = st.session_state.get("book_stats_word_frequency")
+    if word_frequency is not None:
+        st.subheader("Most frequent words (5+ characters)")
+        if word_frequency:
+            st.dataframe(word_frequency, hide_index=True, width="stretch")
+        else:
+            st.info("No words with at least five characters were found.")
+
+    if analysis_button(
+        "Calculate repeated words", "book_stats_repetitions", "repetitions"
+    ):
         with st.spinner("Finding long words repeated in consecutive sentences..."):
             st.session_state["book_stats_repetitions"] = mbm.calculate_repetitions(
                 page_texts
             )
+        st.rerun()
 
     repetitions = st.session_state.get("book_stats_repetitions")
     if repetitions is not None:
