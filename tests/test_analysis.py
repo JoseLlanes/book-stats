@@ -1,6 +1,7 @@
 import unittest
 
 from metrics.book_metrics import calculate_metrics
+from core.name_detector import detect_names
 from models.repetitions.word_frequency import most_frequent_words
 
 
@@ -26,7 +27,7 @@ class WordFrequencyTests(unittest.TestCase):
     def test_likely_names_are_excluded_from_frequency_table(self):
         page_texts = [
             "Vio a Pármaco llegar al puerto. Pármaco habló con Hades. "
-            "Hades respondió entonces. "
+            "Hades respondió entonces. Después vio a Pármaco junto a Hades. "
             "La palabra abundante aparece en el texto."
         ]
 
@@ -41,6 +42,46 @@ class WordFrequencyTests(unittest.TestCase):
         words = most_frequent_words(["Palabra común. Palabra común."])
 
         self.assertEqual(words[0]["Word"], "palabra")
+
+    def test_sentence_initial_words_after_punctuation_are_not_names(self):
+        names = detect_names('Hablaron. Cuando llegó, saludó. Entonces se marcharon.')
+
+        self.assertNotIn("cuando", names)
+        self.assertNotIn("entonces", names)
+
+    def test_capitalized_words_in_the_middle_of_a_sentence_are_names(self):
+        names = detect_names(
+            "Vio a Hades y luego a Pármaco. Respondió Hades respondió y luego vio a Hades; "
+            "Habló con Pármaco."
+        )
+
+        self.assertEqual(names, {"hades", "pármaco"})
+
+    def test_single_mid_sentence_capitalization_is_not_enough(self):
+        names = detect_names("Vio a Había y a Hombres.")
+
+        self.assertNotIn("había", names)
+        self.assertNotIn("hombres", names)
+
+    def test_capitalization_after_any_punctuation_does_not_count(self):
+        names = detect_names("Vio, Hades. Vio, Hades.")
+
+        self.assertNotIn("hades", names)
+
+    def test_newline_does_not_make_mid_sentence_capitalization_a_boundary(self):
+        names = detect_names("Vio a\nHades y luego a Hades llegar.")
+
+        self.assertIn("hades", names)
+
+    def test_name_detector_accepts_page_text_list(self):
+        names = detect_names(
+            [
+                "Vio a Hades.",
+                "Luego encontró a Hades y a Pármaco; después habló con Pármaco.",
+            ]
+        )
+
+        self.assertEqual(names, {"hades", "pármaco"})
 
 
 if __name__ == "__main__":

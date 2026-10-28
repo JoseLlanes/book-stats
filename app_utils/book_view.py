@@ -13,9 +13,13 @@ RESULT_KEYS = (
     "book_stats_explorer",
     "book_stats_word_frequency",
     "book_stats_word_frequency_by_chapter",
+    "book_stats_word_outliers",
+    "book_stats_chapter_word_outliers",
     "book_stats_name_frequency",
     "book_stats_name_frequency_v2",
     "book_stats_ngrams",
+    "book_stats_consecutive_repetitions",
+    "book_stats_repetition_alert_open",
 )
 
 

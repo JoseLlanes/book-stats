@@ -4,6 +4,7 @@ import streamlit as st
 
 from app_utils.analysis_view import (
     render_chapter_word_frequency,
+    render_consecutive_repetition_alert,
     render_name_frequency,
     render_ngrams,
     render_repetitions,
@@ -11,6 +12,10 @@ from app_utils.analysis_view import (
 )
 from app_utils.book_view import render_overview, render_upload
 from app_utils.explorer_view import render_explorer
+from models.repetitions.consecutive_words import (
+    find_consecutive_repetitions_by_page,
+)
+from visualization.word_frequency import render_word_frequency_chart
 
 
 def main():
@@ -24,6 +29,11 @@ def main():
     st.write(
         "Explore the vocabulary, word lengths, and chapter structure of a PDF book."
     )
+    st.caption(
+        "Chapters are detected from lines beginning with “CHAPTER” or “CAPÍTULO”, "
+        "followed by a Roman or Arabic numeral (for example, “CHAPTER 1” or "
+        "“CAPÍTULO IV”). Other heading formats may not be recognized."
+    )
 
     render_upload()
 
@@ -31,6 +41,13 @@ def main():
     page_texts = st.session_state.get("book_stats_pages")
     if not metrics or page_texts is None:
         return
+
+    repetition_key = "book_stats_consecutive_repetitions"
+    if repetition_key not in st.session_state:
+        st.session_state[repetition_key] = find_consecutive_repetitions_by_page(
+            page_texts
+        )
+    render_consecutive_repetition_alert(st.session_state[repetition_key], page_texts)
 
     render_overview(metrics)
     render_explorer(page_texts, metrics)
@@ -57,6 +74,7 @@ def main():
         render_ngrams(page_texts)
     if repetition_tab.open:
         render_repetitions(page_texts)
+    render_word_frequency_chart(page_texts)
 
 
 main()

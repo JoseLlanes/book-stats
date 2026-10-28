@@ -7,8 +7,57 @@ from models.repetitions.ngrams import most_frequent_ngrams
 from models.repetitions.word_frequency import (
     most_frequent_words,
     name_frequency,
+    word_outliers_by_chapter,
+    word_outliers_by_page,
     word_frequency_by_chapter,
 )
+
+
+def render_consecutive_repetition_alert(repetitions, page_texts):
+    """Show repeated-word and word-outlier alerts in a toggleable panel."""
+    page_cache_key = "book_stats_word_outliers"
+    chapter_cache_key = "book_stats_chapter_word_outliers"
+    if page_cache_key not in st.session_state:
+        st.session_state[page_cache_key] = word_outliers_by_page(page_texts)
+    if chapter_cache_key not in st.session_state:
+        st.session_state[chapter_cache_key] = word_outliers_by_chapter(page_texts)
+    outlier_count = len(st.session_state[page_cache_key]) + len(
+        st.session_state[chapter_cache_key]
+    )
+
+    button_label = (
+        f"⚠️ Alerts ({len(repetitions)} repeated, {outlier_count} outliers) — show/hide"
+    )
+    if st.button(button_label, key="book_stats_repetition_alert_toggle"):
+        st.session_state["book_stats_repetition_alert_open"] = not st.session_state.get(
+            "book_stats_repetition_alert_open", False
+        )
+
+    if not st.session_state.get("book_stats_repetition_alert_open", False):
+        return
+
+    repetition_tab, outlier_tab = st.tabs(["⚠️ Repeated word alerts", "Word outlier"])
+    with repetition_tab:
+        number_words = {
+            2: "twice",
+            3: "three times",
+            4: "four times",
+            5: "five times",
+            6: "six times",
+            7: "seven times",
+            8: "eight times",
+            9: "nine times",
+            10: "ten times",
+        }
+        for repetition in repetitions:
+            count = repetition["count"]
+            count_text = number_words.get(count, f"{count} times")
+            st.write(
+                f'This word "{repetition["word"]}" is repeated {count_text} '
+                f"in page {repetition['page']}."
+            )
+    with outlier_tab:
+        render_word_outliers(page_texts)
 
 
 def render_word_frequency(page_texts):
@@ -131,3 +180,33 @@ def render_repetitions(page_texts):
                     "Repeated word": st.column_config.TextColumn("Repeated Word"),
                 },
             )
+
+
+def render_word_outliers(page_texts):
+    """Show page and chapter word counts above the three-sigma threshold."""
+    page_cache_key = "book_stats_word_outliers"
+    chapter_cache_key = "book_stats_chapter_word_outliers"
+    if page_cache_key not in st.session_state:
+        with st.spinner("Checking word counts across pages..."):
+            st.session_state[page_cache_key] = word_outliers_by_page(page_texts)
+    if chapter_cache_key not in st.session_state:
+        with st.spinner("Checking word counts across chapters..."):
+            st.session_state[chapter_cache_key] = word_outliers_by_chapter(page_texts)
+
+    page_results = st.session_state.get(page_cache_key)
+    chapter_results = st.session_state.get(chapter_cache_key)
+    st.caption(
+        "A word is flagged when its count is greater than its mean count per "
+        "page or chapter plus three population standard deviations."
+    )
+    st.subheader("By page")
+    if page_results:
+        st.dataframe(page_results, hide_index=True, width="stretch")
+    else:
+        st.info("No word outliers were found by page.")
+
+    st.subheader("By chapter")
+    if chapter_results:
+        st.dataframe(chapter_results, hide_index=True, width="stretch")
+    else:
+        st.info("No word outliers were found by chapter.")

@@ -16,7 +16,8 @@ def plot_metric(data, x_column, metric_label, chart_type):
 
     # Keep the in-app chart compact; the PNG export is rendered separately at
     # higher DPI from this same figure.
-    fig, ax = plt.subplots(figsize=(8, 3.2), constrained_layout=True)
+    figure_size = (11, 4) if x_column == "Chapter" else (8, 3.2)
+    fig, ax = plt.subplots(figsize=figure_size, constrained_layout=True)
     x, y = data[x_column], data["value"]
     if chart_type == "Line":
         ax.plot(x, y, marker="o", markersize=4, linewidth=1.5)
@@ -29,5 +30,7 @@ def plot_metric(data, x_column, metric_label, chart_type):
     ax.set_title(f"{metric_label} by {x_column.lower()}")
     ax.grid(axis="y", alpha=0.3)
     if x_column == "Chapter":
-        ax.tick_params(axis="x", rotation=45)
+        ax.tick_params(axis="x", rotation=45, labelsize=9)
+        for label in ax.get_xticklabels():
+            label.set_horizontalalignment("right")
     return fig
