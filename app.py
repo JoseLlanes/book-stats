@@ -5,6 +5,7 @@ import streamlit as st
 from app_utils.analysis_view import (
     render_chapter_word_frequency,
     render_consecutive_repetition_alert,
+    render_lemma_frequency,
     render_name_frequency,
     render_ngrams,
     render_repetitions,
@@ -75,6 +76,10 @@ def main():
     if repetition_tab.open:
         render_repetitions(page_texts)
     render_word_frequency_chart(page_texts)
+
+    st.header("Lemma Analysis")
+    with st.tabs(["Lemma frequency"], key="book_stats_lemma_tabs")[0]:
+        render_lemma_frequency(page_texts)
 
 
 main()

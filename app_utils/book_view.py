@@ -12,6 +12,8 @@ RESULT_KEYS = (
     "book_stats_repetitions",
     "book_stats_explorer",
     "book_stats_word_frequency",
+    "book_stats_lemma_frequency_v2",
+    "book_stats_lemma_type_filter",
     "book_stats_word_frequency_by_chapter",
     "book_stats_word_outliers",
     "book_stats_chapter_word_outliers",

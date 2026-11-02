@@ -28,40 +28,36 @@ def word_counts_by_chapter(
 ) -> dict[str, Counter]:
     """Count filtered words per detected chapter, omitting chapter headings."""
     counts_by_chapter = {}
+    for chapter, chapter_text in chapter_texts_by_name(page_texts).items():
+        words = analysis_words(
+            chapter_text,
+            min_length=min_length,
+            excluded_words=excluded_words,
+        )
+        if included_words is not None:
+            words = [word for word in words if word in included_words]
+        counts_by_chapter[chapter] = Counter(words)
+    return counts_by_chapter
+
+
+def chapter_texts_by_name(page_texts: list[str]) -> dict[str, str]:
+    """Collect page fragments under detected chapter names, omitting headings."""
+    chapters = {}
     current_chapter = "Sin capitulo"
 
     for page_text in page_texts:
         text = page_text or ""
-        chunks = []
         start = 0
-
         for heading in chapter_pattern.finditer(text):
-            chapter_text = text[start : heading.start()]
-            if chapter_text.strip():
-                counts_by_chapter.setdefault(current_chapter, Counter())
-            chunks.append((current_chapter, chapter_text))
-
+            fragment = text[start : heading.start()]
+            if fragment.strip():
+                chapters.setdefault(current_chapter, []).append(fragment)
             current_chapter = f"Capitulo {heading.group(1).upper()}"
-            counts_by_chapter.setdefault(current_chapter, Counter())
+            chapters.setdefault(current_chapter, [])
             start = heading.end()
 
-        chapter_text = text[start:]
-        if chapter_text.strip():
-            counts_by_chapter.setdefault(current_chapter, Counter())
-        chunks.append((current_chapter, chapter_text))
+        fragment = text[start:]
+        if fragment.strip():
+            chapters.setdefault(current_chapter, []).append(fragment)
 
-        for chapter, chapter_text in chunks:
-            if chapter not in counts_by_chapter:
-                if not chapter_text.strip():
-                    continue
-                counts_by_chapter[chapter] = Counter()
-            words = analysis_words(
-                chapter_text,
-                min_length=min_length,
-                excluded_words=excluded_words,
-            )
-            if included_words is not None:
-                words = [word for word in words if word in included_words]
-            counts_by_chapter[chapter].update(words)
-
-    return counts_by_chapter
+    return {chapter: "\n".join(fragments) for chapter, fragments in chapters.items()}

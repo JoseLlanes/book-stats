@@ -3,6 +3,7 @@
 import streamlit as st
 
 import metrics.book_metrics as book_metrics
+from models.repetitions.lemma_study import lemma_frequency
 from models.repetitions.ngrams import most_frequent_ngrams
 from models.repetitions.word_frequency import (
     most_frequent_words,
@@ -72,6 +73,31 @@ def render_word_frequency(page_texts):
             st.dataframe(results, hide_index=True, width="stretch")
         else:
             st.info("No words with at least five characters were found.")
+
+
+def render_lemma_frequency(page_texts):
+    """Render the most frequent lemmas in the book."""
+    cache_key = "book_stats_lemma_frequency_v2"
+    if cache_key not in st.session_state:
+        with st.spinner("Analyzing lemmas with spaCy..."):
+            st.session_state[cache_key] = lemma_frequency(page_texts)
+
+    results = st.session_state.get(cache_key)
+    if results is not None:
+        if results:
+            lemma_types = sorted({row["Type"] for row in results})
+            selected_types = st.multiselect(
+                "Filter by lemma type",
+                options=lemma_types,
+                default=lemma_types,
+                key="book_stats_lemma_type_filter",
+            )
+            filtered_results = [
+                row for row in results if row["Type"] in selected_types
+            ]
+            st.dataframe(filtered_results, hide_index=True, width="stretch")
+        else:
+            st.info("No lemmas were found for the frequency table.")
 
 
 def render_chapter_word_frequency(page_texts):
