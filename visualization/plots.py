@@ -1,9 +1,15 @@
 """Matplotlib chart builder for the interactive Book Stats explorer."""
 
 import matplotlib.pyplot as plt
+import pandas as pd
 
 
-def plot_metric(data, x_column, metric_label, chart_type):
+def plot_metric(
+    data: pd.DataFrame,
+    x_column: str,
+    metric_label: str,
+    chart_type: str,
+) -> plt.Figure | None:
     """Build a metric chart from prepared explorer data."""
     if chart_type not in {"Line", "Bar", "Scatter"}:
         raise ValueError(f"Unavailable chart type: {chart_type}")

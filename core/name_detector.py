@@ -6,7 +6,6 @@ from unicodedata import category
 
 from models.tokenizer import WORD_PATTERN
 
-
 # Common Spanish words that are frequently capitalized at sentence starts.
 NON_NAME_WORDS = {
     "aunque",

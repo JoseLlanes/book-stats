@@ -1,7 +1,7 @@
 import unittest
 
-from metrics.book_metrics import calculate_metrics
 from core.name_detector import detect_names
+from metrics.book_metrics import calculate_metrics
 from models.repetitions.word_frequency import most_frequent_words
 
 
@@ -26,9 +26,11 @@ class MetricsTests(unittest.TestCase):
 class WordFrequencyTests(unittest.TestCase):
     def test_likely_names_are_excluded_from_frequency_table(self):
         page_texts = [
-            "Vio a Pármaco llegar al puerto. Pármaco habló con Hades. "
-            "Hades respondió entonces. Después vio a Pármaco junto a Hades. "
-            "La palabra abundante aparece en el texto."
+            (
+                "Vio a Pármaco llegar al puerto. Pármaco habló con Hades. "
+                "Hades respondió entonces. Después vio a Pármaco junto a Hades. "
+                "La palabra abundante aparece en el texto."
+            )
         ]
 
         words = most_frequent_words(page_texts)
@@ -44,7 +46,7 @@ class WordFrequencyTests(unittest.TestCase):
         self.assertEqual(words[0]["Word"], "palabra")
 
     def test_sentence_initial_words_after_punctuation_are_not_names(self):
-        names = detect_names('Hablaron. Cuando llegó, saludó. Entonces se marcharon.')
+        names = detect_names("Hablaron. Cuando llegó, saludó. Entonces se marcharon.")
 
         self.assertNotIn("cuando", names)
         self.assertNotIn("entonces", names)

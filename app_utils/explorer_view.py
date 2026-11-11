@@ -5,13 +5,13 @@ import io
 import matplotlib.pyplot as plt
 import streamlit as st
 
-import metrics.book_metrics as book_metrics
-import visualization.plots as plots
-from metrics.main_classes import METRICS
 from app_utils.ui import analysis_button, metrics_csv
+from metrics import book_metrics
+from metrics.main_classes import METRICS
+from visualization import plots
 
 
-def render_explorer(page_texts, metrics):
+def render_explorer(page_texts: list[str], metrics: dict) -> None:
     """Render metric selection, chart output, and the CSV download."""
     st.header("Literary Metrics Visualizer")
     control_cols = st.columns(3)
@@ -31,9 +31,17 @@ def render_explorer(page_texts, metrics):
             "Chart type", ["Line", "Bar", "Scatter"], key="explorer_chart_type"
         )
 
-    if analysis_button("Plot", "book_stats_explorer", "explorer_plot"):
+    if analysis_button(
+        label="Plot",
+        result_key="book_stats_explorer",
+        widget_key="explorer_plot",
+    ):
         selected = metrics_by_label[selected_label]
-        chart_data = book_metrics.prepare_metric_data(page_texts, selected.key, axis)
+        chart_data = book_metrics.prepare_metric_data(
+            page_texts=page_texts,
+            metric_key=selected.key,
+            axis=axis,
+        )
         x_column = "Pages" if axis == "Pages" else "Chapter"
         st.session_state["book_stats_explorer"] = (
             chart_data,
@@ -46,7 +54,12 @@ def render_explorer(page_texts, metrics):
     explorer = st.session_state.get("book_stats_explorer")
     if explorer:
         chart_data, x_column, metric_label, plotted_type = explorer
-        figure = plots.plot_metric(chart_data, x_column, metric_label, plotted_type)
+        figure = plots.plot_metric(
+            data=chart_data,
+            x_column=x_column,
+            metric_label=metric_label,
+            chart_type=plotted_type,
+        )
         if figure is None:
             st.info("No valid values are available for this selection.")
         else:

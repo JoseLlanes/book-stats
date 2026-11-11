@@ -2,15 +2,15 @@
 
 import streamlit as st
 
-import metrics.book_metrics as book_metrics
+from metrics import book_metrics
 from models.repetitions.lemma_study import lemma_frequency
 from models.repetitions.ngrams import most_frequent_ngrams
 from models.repetitions.word_frequency import (
     most_frequent_words,
     name_frequency,
+    word_frequency_by_chapter,
     word_outliers_by_chapter,
     word_outliers_by_page,
-    word_frequency_by_chapter,
 )
 
 
@@ -92,9 +92,7 @@ def render_lemma_frequency(page_texts):
                 default=lemma_types,
                 key="book_stats_lemma_type_filter",
             )
-            filtered_results = [
-                row for row in results if row["Type"] in selected_types
-            ]
+            filtered_results = [row for row in results if row["Type"] in selected_types]
             st.dataframe(filtered_results, hide_index=True, width="stretch")
         else:
             st.info("No lemmas were found for the frequency table.")

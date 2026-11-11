@@ -1,7 +1,7 @@
 """Metric calculations and explorer data preparation for PDF books."""
 
-import re
-from typing import Iterable
+from collections.abc import Iterable
+from itertools import pairwise
 
 import fitz
 import numpy as np
@@ -142,9 +142,7 @@ def prepare_metric_data(
 def get_repeated_words(sentences: list[str], big_word_th: int = 5) -> pd.DataFrame:
     """Find long words shared by each pair of consecutive sentences."""
     rows = []
-    for pair_number, (first, second) in enumerate(
-        zip(sentences, sentences[1:]), start=1
-    ):
+    for pair_number, (first, second) in enumerate(pairwise(sentences), start=1):
         words_1 = {word.casefold() for word in tokenize(first)}
         words_2 = {word.casefold() for word in tokenize(second)}
         common_words = sorted(words_1 & words_2)

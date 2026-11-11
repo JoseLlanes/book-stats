@@ -5,9 +5,7 @@ from collections import Counter
 from models.repetitions.repetitions_utils import analysis_words
 
 
-def most_frequent_ngrams(
-    page_texts: list[str], n: int, limit: int = 20
-) -> list[dict]:
+def most_frequent_ngrams(page_texts: list[str], n: int, limit: int = 20) -> list[dict]:
     """Return the most common n-grams, without joining words across pages."""
     if n not in (2, 3):
         raise ValueError("Only bigrams (2) and trigrams (3) are supported.")
@@ -16,8 +14,7 @@ def most_frequent_ngrams(
     for page_text in page_texts:
         words = analysis_words(page_text)
         ngrams.extend(
-            " ".join(words[index : index + n])
-            for index in range(len(words) - n + 1)
+            " ".join(words[index : index + n]) for index in range(len(words) - n + 1)
         )
 
     total = len(ngrams)

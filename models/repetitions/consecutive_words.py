@@ -1,5 +1,7 @@
 """Detect identical words repeated consecutively in text."""
 
+from itertools import pairwise
+
 from models.tokenizer import tokenize
 
 
@@ -29,5 +31,5 @@ def has_consecutive_repeated_words(text: str) -> bool:
     """Return whether any word is immediately repeated in the token sequence."""
     words = tokenize(text)
     return any(
-        first.casefold() == second.casefold() for first, second in zip(words, words[1:])
+        first.casefold() == second.casefold() for first, second in pairwise(words)
     )

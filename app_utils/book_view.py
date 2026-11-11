@@ -3,8 +3,7 @@
 import fitz
 import streamlit as st
 
-import metrics.book_metrics as book_metrics
-
+from metrics import book_metrics
 
 RESULT_KEYS = (
     "book_stats_metrics",
@@ -43,12 +42,6 @@ def render_upload():
             f"readable PDF. ({exc.__class__.__name__})"
         )
         return
-    except Exception:
-        st.error(
-            "We couldn't process this PDF. Please check that it is a valid, readable PDF."
-        )
-        return
-
     if metrics["num_pages"] == 0:
         st.error("This PDF contains no pages to analyze.")
     elif metrics["num_words"] == 0:
