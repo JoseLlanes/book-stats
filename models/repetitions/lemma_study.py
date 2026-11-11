@@ -3,15 +3,16 @@
 from functools import lru_cache
 
 import pandas as pd
-import spacy
 
-from models.lemma_constants import POS_LABELS
+from models.lemma_constants import POS_LABELS, INITAL_LEMMA_TO_COUNT
 from models.repetitions.repetitions_utils import chapter_texts_by_name
 
 
 @lru_cache(maxsize=1)
 def _load_nlp():
     """Load the Spanish medium model once, on first use."""
+    import spacy
+
     return spacy.load("es_core_news_md")
 
 
@@ -66,6 +67,55 @@ def token_info_by_chapter(page_texts: list[str]) -> pd.DataFrame:
     result = build_token_info_dataframe(docs)
 
     return result.rename(columns={"group": "chapter"})
+
+
+def pos_counts_by_group(token_info: pd.DataFrame, group_by: str) -> pd.DataFrame:
+    """Count and calculate the percentage of each selected POS per group.
+
+    The input is the token-level DataFrame returned by ``token_info_by_page``
+    or ``token_info_by_chapter``. The result has one row per group and one
+    count and percentage column per part of speech. Percentages use all
+    alphabetic, non-punctuation tokens in that group as the denominator.
+    """
+    if group_by not in token_info.columns:
+        raise ValueError(f"Unknown grouping column: {group_by}")
+
+    groups = token_info[[group_by]].drop_duplicates()
+    eligible_tokens = token_info[token_info["is_alpha"] & ~token_info["is_punct"]]
+    counts = (
+        eligible_tokens[eligible_tokens["pos"].isin(INITAL_LEMMA_TO_COUNT)]
+        .groupby([group_by, "pos"])
+        .size()
+        .unstack(fill_value=0)
+        .reindex(columns=INITAL_LEMMA_TO_COUNT, fill_value=0)
+        .rename(columns=POS_LABELS)
+        .reset_index()
+    )
+    totals = (
+        eligible_tokens.groupby(group_by).size().rename("_total_tokens").reset_index()
+    )
+    result = groups.merge(totals, on=group_by, how="left").merge(
+        counts, on=group_by, how="left"
+    )
+    result["_total_tokens"] = result["_total_tokens"].fillna(0)
+
+    for pos in INITAL_LEMMA_TO_COUNT:
+        label = POS_LABELS[pos]
+        result[label] = result[label].fillna(0).astype(int)
+        denominator = result["_total_tokens"].replace(0, 1)
+        result[f"{label}_percentage"] = 100 * result[label] / denominator
+
+    return result.drop(columns="_total_tokens")
+
+
+def pos_counts_by_page(page_texts: list[str]) -> pd.DataFrame:
+    """Return adjective, adverb, noun, and verb counts for each page."""
+    return pos_counts_by_group(token_info_by_page(page_texts), "page")
+
+
+def pos_counts_by_chapter(page_texts: list[str]) -> pd.DataFrame:
+    """Return adjective, adverb, noun, and verb counts for each chapter."""
+    return pos_counts_by_group(token_info_by_chapter(page_texts), "chapter")
 
 
 def lemma_repetition(

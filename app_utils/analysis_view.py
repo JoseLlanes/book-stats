@@ -3,7 +3,11 @@
 import streamlit as st
 
 from metrics import book_metrics
-from models.repetitions.lemma_study import lemma_frequency
+from models.repetitions.lemma_study import (
+    lemma_frequency,
+    pos_counts_by_chapter,
+    pos_counts_by_page,
+)
 from models.repetitions.ngrams import most_frequent_ngrams
 from models.repetitions.word_frequency import (
     most_frequent_words,
@@ -12,6 +16,7 @@ from models.repetitions.word_frequency import (
     word_outliers_by_chapter,
     word_outliers_by_page,
 )
+from visualization.pos_counts import render_pos_counts_chart
 
 
 def render_consecutive_repetition_alert(repetitions, page_texts):
@@ -96,6 +101,8 @@ def render_lemma_frequency(page_texts):
             st.dataframe(filtered_results, hide_index=True, width="stretch")
         else:
             st.info("No lemmas were found for the frequency table.")
+
+        render_pos_counts_chart(page_texts, pos_counts_by_page, pos_counts_by_chapter)
 
 
 def render_chapter_word_frequency(page_texts):

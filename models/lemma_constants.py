@@ -15,3 +15,5 @@ POS_LABELS = {
     "VERB": "verbo",
     "X": "otro",
 }
+
+INITAL_LEMMA_TO_COUNT = ("ADJ", "ADV", "NOUN", "VERB")
