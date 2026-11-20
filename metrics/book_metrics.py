@@ -65,15 +65,27 @@ def calculate_metrics(page_texts: Iterable[str]) -> dict:
     }
 
 
-def extract_page_texts(pdf_bytes: bytes) -> list[str]:
-    """Extract page text from an in-memory PDF and always close the document."""
+def extract_page_texts(pdf_bytes: bytes, progress_callback=None) -> list[str]:
+    """Extract every page, reporting progress and identifying page-level failures."""
+    pages = []
     with fitz.open(stream=pdf_bytes, filetype="pdf") as document:
-        return [page.get_text() for page in document]
+        page_count = len(document)
+        for page_number in range(page_count):
+            try:
+                pages.append(document.load_page(page_number).get_text())
+            except (fitz.FitzError, RuntimeError, ValueError) as exc:
+                raise RuntimeError(
+                    f"Could not extract text from page {page_number + 1} of "
+                    f"{page_count}: {exc.__class__.__name__}"
+                ) from exc
+            if progress_callback is not None:
+                progress_callback(page_number + 1, page_count)
+    return pages
 
 
-def analyze_pdf(pdf_bytes: bytes) -> tuple[dict, list[str]]:
+def analyze_pdf(pdf_bytes: bytes, progress_callback=None) -> tuple[dict, list[str]]:
     """Extract a PDF's pages and calculate its book-level metrics."""
-    pages = extract_page_texts(pdf_bytes)
+    pages = extract_page_texts(pdf_bytes, progress_callback=progress_callback)
     return calculate_metrics(pages), pages
 
 

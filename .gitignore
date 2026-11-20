@@ -1,7 +1,37 @@
-data/
-venv/
-.venv/
-.vscode/
-.github/
+# Local data and credentials
+/data/*
+**/api_key.json
+.env
+.env.*
+!.env.example
+*.json
+!/data/syllable_database.xlsx
+
+# Local editor and Copilot configuration
+/.vscode/
+/.github/
+
+# Keep notebooks and experiments out; include the maintained scraper scripts
+/notebooks/*
+!/notebooks/scrapping/
+/notebooks/scrapping/*
+!/notebooks/scrapping/syllable_scraper.py
+!/notebooks/scrapping/syllable_scraper_cli.py
+
+# Python environments, bytecode, and test/tool caches
+/venv/
+/.venv/
 __pycache__/
-notebooks/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Jupyter and operating-system files
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db

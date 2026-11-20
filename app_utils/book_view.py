@@ -30,18 +30,28 @@ def render_upload():
     if not st.button("Analyze Book", type="primary", disabled=uploaded_file is None):
         return
 
-    for key in RESULT_KEYS:
-        st.session_state.pop(key, None)
-
     try:
+        progress = st.progress(0, text="Preparing PDF...")
+
+        def update_progress(completed, total):
+            progress.progress(
+                completed / total if total else 1.0,
+                text=f"Extracting page {completed:,} of {total:,}...",
+            )
+
         with st.spinner("Analyzing your book..."):
-            metrics, page_texts = book_metrics.analyze_pdf(uploaded_file.getvalue())
+            metrics, page_texts = book_metrics.analyze_pdf(
+                uploaded_file.getvalue(), progress_callback=update_progress
+            )
+        progress.empty()
     except (fitz.FileDataError, fitz.EmptyFileError, ValueError, RuntimeError) as exc:
         st.error(
             "We couldn't process this PDF. Please check that it is a valid, "
-            f"readable PDF. ({exc.__class__.__name__})"
+            f"readable PDF. {exc}"
         )
         return
+    for key in RESULT_KEYS:
+        st.session_state.pop(key, None)
     if metrics["num_pages"] == 0:
         st.error("This PDF contains no pages to analyze.")
     elif metrics["num_words"] == 0:
