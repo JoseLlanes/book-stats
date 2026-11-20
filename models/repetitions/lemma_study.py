@@ -4,7 +4,7 @@ from functools import lru_cache
 
 import pandas as pd
 
-from models.lemma_constants import POS_LABELS, INITAL_LEMMA_TO_COUNT
+from models.lemma_constants import INITAL_LEMMA_TO_COUNT, POS_LABELS
 from models.repetitions.repetitions_utils import chapter_texts_by_name
 
 

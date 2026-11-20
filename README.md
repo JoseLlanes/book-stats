@@ -21,6 +21,36 @@ streamlit run app.py
 
 Open the local URL printed by Streamlit, upload a PDF, and select **Analyze Book**.
 
+## Syllable scraper
+
+The `notebooks/scrapping/syllable_scraper.py` script queries Sílaba Tónica TIP
+for one word and prints the result as JSON. Pass the word on the command line:
+
+```bash
+python notebooks/scrapping/syllable_scraper.py quisiera
+```
+
+The same operation is available as `scrape_word("quisiera")` when importing
+the script. Each run makes a single word lookup and does not read or write a
+word list or workbook.
+
+The `notebooks/scrapping/syllable_scraper_cli.py` launcher reads words from
+`data/palabras_unicas.txt` and saves results to
+`data/syllable_database.xlsx`. It skips words already present in the database
+and launches the one-word scraper as a separate process, waiting two minutes
+between searches. Run the full queue with:
+
+```bash
+python notebooks/scrapping/syllable_scraper_cli.py
+```
+
+También puedes pasar una palabra para consultarla y guardarla de forma
+individual (si ya está en el Excel, se omite):
+
+```bash
+python notebooks/scrapping/syllable_scraper_cli.py desespera
+```
+
 ## Deploy on Streamlit Community Cloud
 
 1. Push this project to a GitHub repository. Keep local virtual environments and manuscript PDFs out of the repository.
